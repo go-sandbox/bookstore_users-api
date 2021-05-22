@@ -2,13 +2,22 @@ package users
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-sandbox/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/go-sandbox/bookstore_users-api/utils/date_utils"
 	"github.com/go-sandbox/bookstore_users-api/utils/errors"
 )
 
+const (
+	indexUniqueEmail = "email_UNIQUE"
+
+	// SQL
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
+)
+
 var (
+	// モック
 	usersDB = make(map[int64]*User)
 )
 
@@ -43,18 +52,33 @@ func (user User) Get() *errors.RestErr {
 }
 
 func (user User) Save() *errors.RestErr {
-	current := usersDB[user.Id]
-	if current != nil {
-		if current.Email == user.Email {
-			return errors.NewBadRequestError(fmt.Sprintf("email %d already exists", user.Email))
-		}
 
-		return errors.NewBadRequestError(fmt.Sprintf("user %d already exists", user.Id))
+	// クエリ読み込み
+	stmt, err := users_db.Client.Prepare(queryInsertUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+
+	// 現在時刻取得
+	user.DateCreated = date_utils.GetNowString()
+	// 登録処理
+	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
+	if err != nil {
+		// メールアドレスのユニークキー違反エラーの場合
+		if strings.Contains(err.Error(), indexUniqueEmail) {
+			return errors.NewBadRequestError("email %s already exist")
+		}
+		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
 	}
 
-	user.DateCreated = date_utils.GetNowString()
+	// ユーザーID確認
+	userId, err := insertResult.LastInsertId()
+	if err != nil {
+		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
 
-	usersDB[user.Id] = &user
+	user.Id = userId
 
 	return nil
 }
