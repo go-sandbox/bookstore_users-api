@@ -38,7 +38,7 @@ func CreateUser(c *gin.Context) {
 func GetUser(c *gin.Context) {
 	userId, userErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
 	if userErr != nil {
-		err := errors.NewBadRequestError("invalid user id")
+		err := errors.NewBadRequestError("user id should be a number")
 		c.JSON(err.Status, err)
 		return
 	}
@@ -51,4 +51,34 @@ func GetUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, user)
+}
+
+func UpdateUser(c *gin.Context) {
+	// ユーザー確認
+	userId, userErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	if userErr != nil {
+		err := errors.NewBadRequestError("user id should be a number")
+		c.JSON(err.Status, err)
+		return
+	}
+
+	var user users.User
+	// フォーマットエラー
+	if err := c.ShouldBindJSON(&user); err != nil {
+		restErr := errors.NewBadRequestError("invalid json body")
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+
+	user.Id = userId
+
+	// PATCHの場合
+	isPartial := c.Request.Method == http.MethodPatch
+
+	result, err := services.CreateUser(isPartial, user)
+	if err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+	c.JSON(http.StatusOK, result)
 }
