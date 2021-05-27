@@ -1,9 +1,12 @@
 -- ユーザーテーブル
-CREATE TABLE `users_db`.`users` (
-  `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
-  `first_name` VARCHAR(45) NULL,
-  `last_name` VARCHAR(45) NULL,
-  `email` VARCHAR(45) NOT NULL,
-  `date_created` VARCHAR(45) NULL,
+CREATE TABLE `users` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `first_name` varchar(45) DEFAULT NULL,
+  `last_name` varchar(45) DEFAULT NULL,
+  `email` varchar(45) NOT NULL,
+  `date_created` datetime NOT NULL,
+  `status` varchar(45) NOT NULL,
+  `password` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE);
+  UNIQUE KEY `email_UNIQUE` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3
