@@ -98,7 +98,7 @@ func (user User) Delete() *errors.RestErr {
 }
 
 // ステータスで検索
-func (user *User) Search(status string) ([]User, *errors.RestErr) {
+func (user *User) FindByStatus(status string) ([]User, *errors.RestErr) {
 	// クエリ読み込み
 	stmt, err := users_db.Client.Prepare(queryFindUserByStatus)
 	if err != nil {
